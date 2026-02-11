@@ -1,349 +1,223 @@
-# Mail-risk-scanner (Gmail Add-on + Node.js Backend)
+# Mail Risk Scanner 🛡️
 
-[![Language](https://img.shields.io/badge/language-JavaScript-yellow)](#about-the-project)
-[![Platform](https://img.shields.io/badge/platform-Google%20Workspace-lightgrey)](#getting-started)
-[![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-green)](#architecture)
-[![API](https://img.shields.io/badge/external%20api-urlscan.io-blue)](#external-apis-used)
+**Upwind Student Program - Home Task**
 
----
-
-## 🧭 Table of Contents
-<details open>
-<summary>🧭 <b>Table of Contents (click to collapse)</b></summary>
-
-- [📘 About the Project](#about-the-project)
-- [🏗️ Architecture](#architecture)
-- [🔌 External APIs Used](#external-apis-used)
-- [🔧 Project Structure](#project-structure)
-- [🧠 Risk Scoring Logic](#risk-scoring-logic)
-- [✨ Features](#features)
-- [⚠️ Limitations](#limitations)
-- [⚙️ Getting Started](#getting-started)
-  - [✔️ Prerequisites](#prerequisites)
-  - [📦 Installation & Setup](#installation--setup)
-  - [▶️ Running the Backend](#running-the-backend)
-  - [🌐 Exposing the Backend (ngrok)](#exposing-the-backend-ngrok)
-  - [📧 Gmail Add-on Setup](#gmail-add-on-setup)
-  - [🧪 Testing the Backend (PowerShell)](#testing-the-backend-powershell)
-- [🔐 Security Notes](#security-notes)
-- [👩‍💻 Author](#author)
-
-</details>
-
----
-
-<a id="about-the-project"></a>
-## 📘 About the Project
-
-**Mail Risk Scanner** is a **Gmail Add-on** that scans the currently opened email and returns:
-
-- **Risk score (0–100)**
-- **Verdict**: `SAFE` / `SUSPICIOUS` / `DANGEROUS`
-- **Explainable signals** (human-readable reasons + weights)
-
-The system is split into:
-1) **Gmail Add-on (Google Apps Script)** — extracts email fields (sender/subject/body/links/attachments metadata) and renders the UI  
-2) **Backend (Node.js + Express)** — runs checks, calls external URL reputation intelligence, aggregates signals, and computes the final score
-
-This project was built as a technical assignment and intentionally uses a modular structure to support adding more checks and external APIs.
-
----
-
-<a id="architecture"></a>
-## 🏗️ Architecture
-
-```mermaid
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart LR
-  U[User in Gmail] -->|opens an email| A[Gmail Add-on (Apps Script)\nbuildAddOn(e)]
-  A -->|extracts: from/replyTo/subject/body\n+ links + attachments metadata| P[Normalized Payload (JSON)]
-  P -->|HTTPS POST /scan| B[Backend (Node.js + Express)]
-
-  B --> R[routes/scan.js\n(input normalization only)]
-  R --> S[services/scanService.js\n(orchestration + scoring)]
-
-  S --> C1[checks/senderChecks.js]
-  S --> C2[checks/contentChecks.js]
-  S --> C3[checks/linkChecks.js]
-  S --> C4[checks/attachmentChecks.js]
-  S --> C5[checks/urlscanChecks.js]
-
-  C5 --> UC[services/urlscanClient.js]
-  UC -->|submit + poll| X[urlscan.io API]
-
-  S --> AGG[services/signalAggregator.js\n(dedupe + cap weights)]
-  AGG --> OUT[Response JSON\n{ score, verdict, summary, signals }]
-
-  OUT --> A
-  A -->|renders CardService UI| U
-
-
----
-
-<a id="project-structure"></a>
-
-## 🔧 Project Structure
-```
+ 
+🧭 Table of Contents
 
 <details>
+<summary>🧭 Table of Contents (click to expand)</summary>
 
-<summary>🗂️ <b>Click to view folder tree</b></summary>
-
-```text
-Mail-risk-scanner/
-│
-├── checks/                       # Heuristic & enrichment checks (pure logic modules)
-│   ├── attachmentChecks.js       # Attachment metadata heuristics (zip, risky extensions, etc.)
-│   ├── contentChecks.js          # Suspicious keyword & text pattern detection
-│   ├── linkChecks.js             # Link heuristics (shorteners, IP URLs, non-HTTPS)
-│   ├── senderChecks.js           # Sender-based checks (reply-to mismatch, anomalies)
-│   └── urlscanChecks.js          # Converts urlscan.io results into risk signals
-│
-├── gmail-addon/                  # Google Apps Script (Gmail Add-on frontend)
-│   ├── Code.gs                   # Entry point: buildAddOn, extraction, card rendering
-│   ├── appsscript.json           # Add-on manifest (scopes, triggers, metadata)
-│   └── backendClient.gs          # Thin HTTP client calling backend /scan endpoint
-│
-├── routes/                       # Express route layer (HTTP only)
-│   └── scan.js                   # POST /scan endpoint (request normalization)
-│
-├── services/                     # Core business logic
-│   ├── scanService.js            # Orchestrates checks → aggregation → score → verdict
-│   ├── signalAggregator.js       # Deduplicates entity signals (prevents score inflation)
-│   └── urlscanClient.js          # Axios-based client for urlscan.io API
-│
-├── utils/                        # Shared helper utilities
-│   ├── email.js                  # Email parsing & normalization helpers
-│   ├── filename.js               # Filename & extension parsing utilities
-│   ├── text.js                   # Text normalization helpers
-│   └── url.js                    # URL parsing & validation helpers
-│
-├── app.js                        # Express app configuration (middleware + routes)
-├── server.js                     # Application entry point (dotenv + app.listen)
-├── package.json                  # Dependencies & npm scripts
-├── package-lock.json             # Dependency lock file
-└── README.md                     # Project documentation
-```
+* [📘 About the Project](#-about-the-project)
+* [🏗️ Architecture](#-architecture)
+* [🔧 Project Structure](#-project-structure)
+* [✨ Features](#-features)
+* [📡 APIs & Interfaces](#-apis--interfaces)
+* [⚙️ Getting Started](#-getting-started)
+    * [✔️ Prerequisites](#-prerequisites)
+    * [📦 Installation & Setup (Backend)](#-installation--setup-backend)
+    * [📧 Setup (Gmail Add-on)](#-setup-gmail-add-on)
+* [▶️ Usage](#-usage)
+* [🧩 Example Output](#-example-output)
+* [⚠️ Limitations & Constraints](#-limitations--constraints)
+* [👩‍💻 Author](#-author)
 
 </details>
 
 ---
 
-<a id="risk-scoring-logic"></a>
+## 📘 About the Project
 
-🧠 Risk Scoring Logic
-Signal model
+This project was developed as part of the **Upwind Student Program Home Task**.
+It is a comprehensive security tool designed to analyze incoming emails in **Gmail** and detect potential security risks such as phishing, scams, and malware distribution.
 
-Each check returns a list of Signals:
-{
-  id: "LINK_SHORTENER",
-  label: "Link uses a URL shortener",
-  severity: "MEDIUM",
-  weight: 18,
-  evidence: { link: "...", host: "bit.ly" }
-}
-Aggregation (prevent score inflation)
+The system combines **static heuristic analysis** with **dynamic external intelligence** to generate a risk score and a clear verdict (`SAFE`, `SUSPICIOUS`, or `DANGEROUS`) for every opened email.
 
-Signals that refer to the same entity (e.g., the same link) are aggregated by:
+---
 
-evidence.link (preferred)
+## 🏗️ Architecture
 
-evidence.ip
+The solution relies on a **Client-Server** architecture to offload heavy processing from the limited Google Apps Script environment.
 
-fallback key: id
+1.  **Client (Gmail Add-on):**
+    * Built with **Google Apps Script**.
+    * Extracts metadata (Headers, Body, Links, Attachments) from the active email.
+    * Renders the UI (CardService) to display results to the user.
+2.  **Server (Backend Analysis Service):**
+    * Built with **Node.js & Express**.
+    * Performs deep content inspection and heuristic checks.
+    * Communicates with external threat intelligence APIs.
+    * Aggregates signals and calculates the final risk score.
 
-Aggregation behavior:
+---
 
-duplicates add only 50% weight (not full double)
+## 🔧 Project Structure
 
-aggregated weight is capped per entity
+The project follows a modular design, separating the heuristic logic, service layer, and API routes.
 
-provenance is preserved in evidence.sources
+<details>
+<summary>🗂️ Click to view full folder tree</summary>
 
-Score + verdict
-
-Score = sum of aggregated weights, clamped into 0..100
-
-Verdict thresholds:
-
-SAFE < 25
-
-SUSPICIOUS >= 25
-
-DANGEROUS >= 60
-
-<a id="features"></a>
+```text
+Mail-Risk-Scanner/
+├── checks/                  # Heuristic logic modules
+│   ├── attachmentChecks.js  # File extension & double-extension detection
+│   ├── contentChecks.js     # NLP-based keyword analysis (Urgency, Crypto, etc.)
+│   ├── linkChecks.js        # URL structure analysis (IPs, Shorteners)
+│   ├── senderChecks.js      # Sender authenticity & Reply-To mismatch
+│   └── urlscanChecks.js     # External API integration logic
+│
+├── services/                # Business logic
+│   ├── scanService.js       # Main orchestrator
+│   ├── signalAggregator.js  # Score calculation & de-duplication
+│   └── urlscanClient.js     # HTTP Client for urlscan.io
+│
+├── gmail-addon/             # Frontend (Google Apps Script)
+│   ├── Code.gs              # Main Add-on logic
+│   ├── appsscript.json      # Manifest & Permissions
+│   └── backendClient.gs     # Networking with the backend
+│
+├── routes/                  # API Definitions
+│   └── scan.js              # POST /scan endpoint
+│
+├── utils/                   # Helper functions
+│   ├── email.js             # Email parsing
+│   ├── filename.js          # File analysis
+│   ├── text.js              # Text matching
+│   └── url.js               # URL parsing
+│
+├── app.js                   # Express App configuration
+├── server.js                # Server entry point
+└── package.json             # Dependencies & Scripts
+</details>
 
 ✨ Features
+The scanner evaluates emails based on four main vectors:
 
-Gmail Add-on (contextual trigger) scans the currently opened email
+Content Analysis: Detects high-pressure language ("Urgent", "Act Now"), credential theft attempts, and financial scams.
 
-Extracts:
+Sender Verification: Identifies "Reply-To" mismatches and suspicious use of free email providers for business contexts.
 
-sender (from), replyTo
+Link Inspection: Analyzes URLs for IP-based hostnames, unencrypted HTTP, and known URL shorteners.
 
-subject
+Attachment Scanning: Flags dangerous file types (.exe, .scr) and deceptive naming conventions (e.g., invoice.pdf.exe).
 
-plain text body
+External Intelligence: Real-time integration with urlscan.io to check if links are known malicious sites.
 
-links (regex-based extraction)
+📡 APIs & Interfaces
+Internal API
+The backend exposes a single RESTful endpoint used by the Add-on:
 
-attachments metadata (name/type/size only)
+POST /scan
 
-Backend modular checks:
+Input: JSON object containing subject, bodyText, links, attachments, from, replyTo.
 
-link heuristics (shorteners, raw IP URL, non-HTTPS)
+Output: JSON object with score, verdict, summary, and a list of signals.
 
-attachment heuristics (archives, risky extensions, etc.)
+External APIs
+urlscan.io API: Used to scan URLs found in the email body. The system submits the URL and polls for a verdict (Malicious/Clean) to enrich the risk score.
 
-content heuristics (suspicious keywords/patterns)
+Google APIs
+GmailApp: To read message data.
 
-sender heuristics (basic mismatch patterns)
+CardService: To build the Add-on UI.
 
-urlscan enrichment for URL reputation (best-effort, bounded)
-
-<a id="limitations"></a>
-
-⚠️ Limitations
-
-Attachments are not uploaded or scanned by content (metadata only)
-
-urlscan is async by nature; results may be pending depending on timing
-
-No caching layer yet (re-scanning the same URL may repeat work)
-
-Heuristic-based scoring can produce false positives/negatives (expected tradeoff for an MVP)
-
-<a id="getting-started"></a>
+UrlFetchApp: To communicate with the backend.
 
 ⚙️ Getting Started
-
-<a id="prerequisites"></a>
-
 ✔️ Prerequisites
+Node.js (v14 or higher)
 
-Node.js (v18+ recommended)
+npm (Node Package Manager)
 
-npm
+Google Account (to deploy the Add-on)
 
-Gmail account Google Apps Script project (Gmail Add-on)
+urlscan.io API Key (Free tier is sufficient)
 
+📦 Installation & Setup (Backend)
+Clone the repository:
 
-urlscan.io API key
+Bash
 
+git clone [https://github.com/Rut-Hagai/Mail-Risk-Scanner.git](https://github.com/Rut-Hagai/Mail-Risk-Scanner.git)
+cd Mail-Risk-Scanner
+Install dependencies:
 
-(Optional) ngrok for exposing localhost to Gmail
+Bash
 
-
-
-<a id="installation--setup"></a>
-📦 Installation & Setup
-git clone <repo-url>
-cd mail-risk-scanner-backend
 npm install
+Configure Environment: Create a .env file in the root directory:
 
-Create .env (do NOT commit it):
-URLSCAN_API_KEY=YOUR_URLSCAN_KEY
+קטע קוד
+
+PORT=3000
+URLSCAN_API_KEY=your_actual_api_key
 URLSCAN_VISIBILITY=public
+Run the Server:
 
+Bash
 
-<a id="running-the-backend"></a>
-▶️ Running the Backend
 npm start
+📧 Setup (Gmail Add-on)
+Go to Google Apps Script.
 
-Backend listens on port 3000 (see server.js).
-Health check:
-GET http://localhost:3000/health
+Create a new project and paste the contents of gmail-addon/Code.gs and appsscript.json.
 
+Set the backend URL in Project Settings > Script Properties:
 
-<a id="exposing-the-backend-ngrok"></a>
-🌐 Exposing the Backend (ngrok)
-Gmail Add-ons need a public HTTPS endpoint:
-ngrok http 3000
+Property: BACKEND_BASE_URL
 
-Copy the HTTPS forwarding URL, for example:
-https://xxxxx.ngrok-free.dev
+Value: http://your-server-address:3000 (Use ngrok for local testing).
 
+Deploy as a Google Workspace Add-on.
 
-<a id="gmail-add-on-setup"></a>
-📧 Gmail Add-on Setup
+▶️ Usage
+Once installed, simply open any email in Gmail (Web or Mobile). The Add-on will automatically:
 
+Analyze the email content.
 
-Open the Apps Script project
+Display a card in the sidebar.
 
+Show the Verdict (Safe/Suspicious/Dangerous) and the Risk Score.
 
-Ensure appsscript.json includes required scopes:
+List specific Signals explaining why the email was flagged.
 
+🧩 Example Output
+Backend Response (JSON):
 
-gmail.readonly
+JSON
 
+{
+  "score": 85,
+  "verdict": "DANGEROUS",
+  "summary": "DANGEROUS based on: URL flagged as malicious; Attachment has a double extension",
+  "signals": [
+    {
+      "id": "URLSCAN_MALICIOUS",
+      "label": "urlscan: URL flagged as malicious",
+      "severity": "HIGH",
+      "weight": 45
+    },
+    {
+      "id": "ATTACHMENT_DOUBLE_EXTENSION",
+      "label": "Attachment has a double extension",
+      "severity": "HIGH",
+      "weight": 25
+    }
+  ]
+}
+⚠️ Limitations & Constraints
+🇺🇸 Language Support: The Natural Language Processing (NLP) and keyword heuristics currently support English only. Emails in other languages may not be analyzed correctly for content-based risks.
 
-gmail.addons.execute
+Execution Time: Google Apps Script has a strict timeout (30s). The backend must respond quickly; therefore, external API checks have a short timeout threshold.
 
+Prototype Status: This is a home task project and is not intended for production use without further security hardening.
 
-script.external_request
-
-
-
-
-Set Script Property BACKEND_BASE_URL:
-
-
-Apps Script → Project Settings → Script properties
-
-
-Key: BACKEND_BASE_URL
-
-
-Value: https://xxxxx.ngrok-free.dev
-
-
-
-
-Deploy the Gmail Add-on (Test deployment is sufficient for demo)
-
-
-Open Gmail → open an email → open the Add-on sidebar to see results.
-
-
-
-<a id="testing-the-backend-powershell"></a>
-🧪 Testing the Backend (PowerShell)
-Invoke-RestMethod `
-  -Uri http://localhost:3000/scan `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{
-    "links": ["http://bit.ly/test"],
-    "attachments": [{"filename":"invoice.zip"}]
-  }'
-
-
-<a id="security-notes"></a>
-🔐 Security Notes
-
-
-Never commit .env (contains API keys)
-
-
-Never commit node_modules/
-
-
-Gmail Add-on performs metadata extraction only
-
-
-External API calls are designed to be bounded so the UI remains responsive
-
-
-
-<a id="author"></a>
 👩‍💻 Author
-Developed by Rut Hagai
-GitHub: https://github.com/Rut-Hagai
+Ruth Hagai
 
-::contentReference[oaicite:0]{index=0}
+Role: Developer & Security Researcher
 
+Context: Upwind Student Program
 
+⭐ If you found this project interesting, feel free to explore the code!
