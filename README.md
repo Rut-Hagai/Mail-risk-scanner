@@ -89,104 +89,104 @@ Mail-Risk-Scanner/
 ├── app.js                   # Express App configuration
 ├── server.js                # Server entry point
 └── package.json             # Dependencies & Scripts
+
+```
+
 </details>
 
-✨ Features
+## ✨ Features
+
 The scanner evaluates emails based on four main vectors:
 
-Content Analysis: Detects high-pressure language ("Urgent", "Act Now"), credential theft attempts, and financial scams.
+* **🔍 Content Analysis:** Detects high-pressure language ("Urgent", "Act Now"), credential theft attempts, and financial scams.
+* **👤 Sender Verification:** Identifies "Reply-To" mismatches and suspicious use of free email providers for business contexts.
+* **🔗 Link Inspection:** Analyzes URLs for IP-based hostnames, unencrypted HTTP, and known URL shorteners.
+* **📎 Attachment Scanning:** Flags dangerous file types (`.exe`, `.scr`) and deceptive naming conventions (e.g., `invoice.pdf.exe`).
+* **🌐 External Intelligence:** Real-time integration with **urlscan.io** to check if links are known malicious sites.
 
-Sender Verification: Identifies "Reply-To" mismatches and suspicious use of free email providers for business contexts.
+---
 
-Link Inspection: Analyzes URLs for IP-based hostnames, unencrypted HTTP, and known URL shorteners.
+## 📡 APIs & Interfaces
 
-Attachment Scanning: Flags dangerous file types (.exe, .scr) and deceptive naming conventions (e.g., invoice.pdf.exe).
-
-External Intelligence: Real-time integration with urlscan.io to check if links are known malicious sites.
-
-📡 APIs & Interfaces
-Internal API
+### Internal API
 The backend exposes a single RESTful endpoint used by the Add-on:
 
-POST /scan
+* **`POST /scan`**
+    * **Input:** JSON object containing `subject`, `bodyText`, `links`, `attachments`, `from`, `replyTo`.
+    * **Output:** JSON object with `score`, `verdict`, `summary`, and a list of `signals`.
 
-Input: JSON object containing subject, bodyText, links, attachments, from, replyTo.
+### External APIs
+* **urlscan.io API:** Used to scan URLs found in the email body. The system submits the URL and polls for a verdict (Malicious/Clean) to enrich the risk score.
 
-Output: JSON object with score, verdict, summary, and a list of signals.
+### Google APIs
+* **GmailApp:** To read message data.
+* **CardService:** To build the Add-on UI.
+* **UrlFetchApp:** To communicate with the backend.
 
-External APIs
-urlscan.io API: Used to scan URLs found in the email body. The system submits the URL and polls for a verdict (Malicious/Clean) to enrich the risk score.
+---
 
-Google APIs
-GmailApp: To read message data.
+## ⚙️ Getting Started
 
-CardService: To build the Add-on UI.
+### ✔️ Prerequisites
+* **Node.js** (v14 or higher)
+* **npm** (Node Package Manager)
+* **Google Account** (to deploy the Add-on)
+* **urlscan.io API Key** (Free tier is sufficient)
 
-UrlFetchApp: To communicate with the backend.
+### 📦 Installation & Setup (Backend)
 
-⚙️ Getting Started
-✔️ Prerequisites
-Node.js (v14 or higher)
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/Rut-Hagai/Mail-Risk-Scanner.git](https://github.com/Rut-Hagai/Mail-Risk-Scanner.git)
+    cd Mail-Risk-Scanner
+    ```
 
-npm (Node Package Manager)
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-Google Account (to deploy the Add-on)
+3.  **Configure Environment:**
+    Create a `.env` file in the root directory:
+    ```env
+    PORT=3000
+    URLSCAN_API_KEY=your_actual_api_key
+    URLSCAN_VISIBILITY=public
+    ```
 
-urlscan.io API Key (Free tier is sufficient)
+4.  **Run the Server:**
+    ```bash
+    npm start
+    ```
 
-📦 Installation & Setup (Backend)
-Clone the repository:
+### 📧 Setup (Gmail Add-on)
 
-Bash
+1.  Go to **Google Apps Script**.
+2.  Create a new project and paste the contents of `gmail-addon/Code.gs` and `appsscript.json`.
+3.  Set the backend URL in **Project Settings > Script Properties**:
+    * **Property:** `BACKEND_BASE_URL`
+    * **Value:** `http://your-server-address:3000` (Use **ngrok** for local testing).
+4.  **Deploy** as a Google Workspace Add-on.
 
-git clone [https://github.com/Rut-Hagai/Mail-Risk-Scanner.git](https://github.com/Rut-Hagai/Mail-Risk-Scanner.git)
-cd Mail-Risk-Scanner
-Install dependencies:
+---
 
-Bash
+## ▶️ Usage
 
-npm install
-Configure Environment: Create a .env file in the root directory:
+Once installed, simply open any email in Gmail (Web or Mobile).
+The Add-on will automatically:
 
-קטע קוד
+1.  Analyze the email content.
+2.  Display a card in the sidebar.
+3.  Show the **Verdict** (`SAFE` / `SUSPICIOUS` / `DANGEROUS`) and the **Risk Score**.
+4.  List specific **Signals** explaining why the email was flagged.
 
-PORT=3000
-URLSCAN_API_KEY=your_actual_api_key
-URLSCAN_VISIBILITY=public
-Run the Server:
+---
 
-Bash
+## 🧩 Example Output
 
-npm start
-📧 Setup (Gmail Add-on)
-Go to Google Apps Script.
+**Backend Response (JSON):**
 
-Create a new project and paste the contents of gmail-addon/Code.gs and appsscript.json.
-
-Set the backend URL in Project Settings > Script Properties:
-
-Property: BACKEND_BASE_URL
-
-Value: http://your-server-address:3000 (Use ngrok for local testing).
-
-Deploy as a Google Workspace Add-on.
-
-▶️ Usage
-Once installed, simply open any email in Gmail (Web or Mobile). The Add-on will automatically:
-
-Analyze the email content.
-
-Display a card in the sidebar.
-
-Show the Verdict (Safe/Suspicious/Dangerous) and the Risk Score.
-
-List specific Signals explaining why the email was flagged.
-
-🧩 Example Output
-Backend Response (JSON):
-
-JSON
-
+```json
 {
   "score": 85,
   "verdict": "DANGEROUS",
@@ -206,6 +206,7 @@ JSON
     }
   ]
 }
+
 ⚠️ Limitations & Constraints
 🇺🇸 Language Support: The Natural Language Processing (NLP) and keyword heuristics currently support English only. Emails in other languages may not be analyzed correctly for content-based risks.
 
