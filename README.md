@@ -52,17 +52,96 @@ This project was built as a technical assignment and intentionally uses a modula
 <a id="architecture"></a>
 ## 🏗️ Architecture
 
-High-level flow:
-Gmail Add-on (Apps Script)
-buildAddOn(e): triggered when user opens an email
-extracts: from / replyTo / subject / plain body / links / attachments metadata
-POST /scan to backend
+USER (Gmail)
+   │
+   ▼
+┌────────────────────────────────────┐
+│        Gmail Add-on (Apps Script)  │
+│------------------------------------│
+│ • Triggered when email is opened  │
+│ • Extracts normalized payload:     │
+│   - from / replyTo                 │
+│   - subject                        │
+│   - plain body                     │
+│   - links (regex extraction)       │
+│   - attachments metadata           │
+│ • Sends POST /scan to backend      │
+│ • Renders result card (CardService)│
+└──────────────────┬─────────────────┘
+                   │ HTTPS (JSON)
+                   ▼
+┌────────────────────────────────────┐
+│        Express Backend             │
+│        (Node.js + Express)         │
+│------------------------------------│
+│ app.js → middleware + routes       │
+│ server.js → environment + listen   │
+│                                    │
+│ POST /scan                         │
+│ routes/scan.js                     │
+│  • Input normalization             │
+│  • Delegates to scanService        │
+└──────────────────┬─────────────────┘
+                   ▼
+┌────────────────────────────────────┐
+│         scanService.js             │
+│     (Orchestration Layer)          │
+│------------------------------------│
+│ • Executes all check modules       │
+│ • Calls external APIs              │
+│ • Collects raw signals             │
+│ • Aggregates signals               │
+│ • Computes final score (0–100)     │
+│ • Determines verdict               │
+│ • Returns structured JSON result   │
+└──────────────────┬─────────────────┘
+                   ▼
+        ┌────────────────────────┐
+        │      Check Modules     │
+        │   (Independent Units)  │
+        ├────────────────────────┤
+        │ senderChecks.js        │
+        │ contentChecks.js       │
+        │ linkChecks.js          │
+        │ attachmentChecks.js    │
+        │ urlscanChecks.js       │
+        └────────────┬───────────┘
+                     ▼
+        ┌────────────────────────┐
+        │ signalAggregator.js    │
+        │------------------------│
+        │ • De-duplicates        │
+        │ • Caps entity weights  │
+        │ • Prevents inflation   │
+        │ • Preserves evidence   │
+        └────────────┬───────────┘
+                     ▼
+        ┌────────────────────────┐
+        │ External Intelligence  │
+        │------------------------│
+        │ urlscanClient.js       │
+        │ → urlscan.io API       │
+        └────────────────────────┘
+                     ▼
+┌────────────────────────────────────┐
+│        Final JSON Response         │
+│------------------------------------│
+│ {                                  │
+│   score: number (0–100),           │
+│   verdict: SAFE | SUSPICIOUS |     │
+│            DANGEROUS,              │
+│   summary: string,                 │
+│   signals: Signal[]                │
+│ }                                  │
+└────────────────────────────────────┘
+                   │
+                   ▼
+        Gmail Add-on renders:
+        • Verdict
+        • Score
+        • Top signals
+        • Email snapshot
 
-Backend (Express)
-routes/scan.js -> request normalization
-services/scanService -> orchestrates checks + scoring + verdict
-checks/* -> independent heuristics + external API signals
-services/signalAggregator -> de-dupes signals to prevent score inflation
 
 
 ---
