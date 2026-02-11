@@ -52,95 +52,31 @@ This project was built as a technical assignment and intentionally uses a modula
 <a id="architecture"></a>
 ## 🏗️ Architecture
 
-USER (Gmail)
-   │
-   ▼
-┌────────────────────────────────────┐
-│        Gmail Add-on (Apps Script)  │
-│------------------------------------│
-│ • Triggered when email is opened  │
-│ • Extracts normalized payload:     │
-│   - from / replyTo                 │
-│   - subject                        │
-│   - plain body                     │
-│   - links (regex extraction)       │
-│   - attachments metadata           │
-│ • Sends POST /scan to backend      │
-│ • Renders result card (CardService)│
-└──────────────────┬─────────────────┘
-                   │ HTTPS (JSON)
-                   ▼
-┌────────────────────────────────────┐
-│        Express Backend             │
-│        (Node.js + Express)         │
-│------------------------------------│
-│ app.js → middleware + routes       │
-│ server.js → environment + listen   │
-│                                    │
-│ POST /scan                         │
-│ routes/scan.js                     │
-│  • Input normalization             │
-│  • Delegates to scanService        │
-└──────────────────┬─────────────────┘
-                   ▼
-┌────────────────────────────────────┐
-│         scanService.js             │
-│     (Orchestration Layer)          │
-│------------------------------------│
-│ • Executes all check modules       │
-│ • Calls external APIs              │
-│ • Collects raw signals             │
-│ • Aggregates signals               │
-│ • Computes final score (0–100)     │
-│ • Determines verdict               │
-│ • Returns structured JSON result   │
-└──────────────────┬─────────────────┘
-                   ▼
-        ┌────────────────────────┐
-        │      Check Modules     │
-        │   (Independent Units)  │
-        ├────────────────────────┤
-        │ senderChecks.js        │
-        │ contentChecks.js       │
-        │ linkChecks.js          │
-        │ attachmentChecks.js    │
-        │ urlscanChecks.js       │
-        └────────────┬───────────┘
-                     ▼
-        ┌────────────────────────┐
-        │ signalAggregator.js    │
-        │------------------------│
-        │ • De-duplicates        │
-        │ • Caps entity weights  │
-        │ • Prevents inflation   │
-        │ • Preserves evidence   │
-        └────────────┬───────────┘
-                     ▼
-        ┌────────────────────────┐
-        │ External Intelligence  │
-        │------------------------│
-        │ urlscanClient.js       │
-        │ → urlscan.io API       │
-        └────────────────────────┘
-                     ▼
-┌────────────────────────────────────┐
-│        Final JSON Response         │
-│------------------------------------│
-│ {                                  │
-│   score: number (0–100),           │
-│   verdict: SAFE | SUSPICIOUS |     │
-│            DANGEROUS,              │
-│   summary: string,                 │
-│   signals: Signal[]                │
-│ }                                  │
-└────────────────────────────────────┘
-                   │
-                   ▼
-        Gmail Add-on renders:
-        • Verdict
-        • Score
-        • Top signals
-        • Email snapshot
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+  U[User in Gmail] -->|opens an email| A[Gmail Add-on (Apps Script)\nbuildAddOn(e)]
+  A -->|extracts: from/replyTo/subject/body\n+ links + attachments metadata| P[Normalized Payload (JSON)]
+  P -->|HTTPS POST /scan| B[Backend (Node.js + Express)]
+
+  B --> R[routes/scan.js\n(input normalization only)]
+  R --> S[services/scanService.js\n(orchestration + scoring)]
+
+  S --> C1[checks/senderChecks.js]
+  S --> C2[checks/contentChecks.js]
+  S --> C3[checks/linkChecks.js]
+  S --> C4[checks/attachmentChecks.js]
+  S --> C5[checks/urlscanChecks.js]
+
+  C5 --> UC[services/urlscanClient.js]
+  UC -->|submit + poll| X[urlscan.io API]
+
+  S --> AGG[services/signalAggregator.js\n(dedupe + cap weights)]
+  AGG --> OUT[Response JSON\n{ score, verdict, summary, signals }]
+
+  OUT --> A
+  A -->|renders CardService UI| U
 
 
 
@@ -204,6 +140,8 @@ Mail-risk-scanner/
 ```
 
 </details>
+
+---
 
 <a id="risk-scoring-logic"></a>
 
