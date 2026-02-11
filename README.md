@@ -207,18 +207,19 @@ The Add-on will automatically:
   ]
 }
 
-⚠️ Limitations & Constraints
-🇺🇸 Language Support: The Natural Language Processing (NLP) and keyword heuristics currently support English only. Emails in other languages may not be analyzed correctly for content-based risks.
+## ⚠️ Limitations & Constraints
 
-Execution Time: Google Apps Script has a strict timeout (30s). The backend must respond quickly; therefore, external API checks have a short timeout threshold.
+* **🇺🇸 Language Support:** The Natural Language Processing (NLP) and keyword heuristics currently support **English only**. Emails in other languages may not be analyzed correctly for content-based risks.
+* **⏳ Execution Time:** Google Apps Script has a strict timeout (30s). The backend must respond quickly; therefore, external API checks have a short timeout threshold.
+* **🚧 Prototype Status:** This is a home task project and is not intended for production use without further security hardening.
 
-Prototype Status: This is a home task project and is not intended for production use without further security hardening.
+---
 
-👩‍💻 Author
-Ruth Hagai
+## 👩‍💻 Author
 
-Role: Developer & Security Researcher
+**Ruth Hagai**
 
-Context: Upwind Student Program
+* **Role:** Developer & Security Researcher
+* **Context:** Upwind Student Program
 
-⭐ If you found this project interesting, feel free to explore the code!
+⭐ **If you found this project interesting, feel free to explore the code!**
