@@ -20,6 +20,7 @@
 * [▶️ Usage](#-usage)
 * [🧩 Example Output](#-example-output)
 * [⚠️ Limitations & Constraints](#-limitations--constraints)
+* [🔮 Future Roadmap](#-future-roadmap)
 * [👩‍💻 Author](#-author)
 
 </details>
@@ -214,6 +215,16 @@ The Add-on will automatically:
 * **🇺🇸 Language Support:** The Natural Language Processing (NLP) and keyword heuristics currently support **English only**. Emails in other languages may not be analyzed correctly for content-based risks.
 * **⏳ Execution Time:** Google Apps Script has a strict timeout (30s). The backend must respond quickly; therefore, external API checks have a short timeout threshold.
 * **🚧 Prototype Status:** This is a home task project only.
+
+---
+
+## 🔮 Future Roadmap
+
+To enhance the scanner's capabilities and move closer to a production-ready product, the following features are planned:
+
+* **users Customization:** Adding a management console to allow users to define personal **Whitelists/Blacklists** and adjust risk sensitivity thresholds.
+* **⚡ Caching Layer:** Implementing **Redis** to cache external API results (like urlscan.io) and reduce latency for frequently recurring links.
+* **📜 Scan History & Dashboard:** Persisting scan results to a database (MongoDB/PostgreSQL) to allow users to view historical data and trends.
 
 ---
 
