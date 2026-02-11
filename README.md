@@ -59,7 +59,7 @@ extracts: from / replyTo / subject / plain body / links / attachments metadata
 POST /scan to backend
 
 Backend (Express)
-routes/scan.js -> request normalization (no business logic)
+routes/scan.js -> request normalization
 services/scanService -> orchestrates checks + scoring + verdict
 checks/* -> independent heuristics + external API signals
 services/signalAggregator -> de-dupes signals to prevent score inflation
@@ -79,8 +79,6 @@ The backend integrates with **urlscan.io** for URL reputation enrichment:
 Relevant code:
 - `services/urlscanClient.js` (HTTP client using axios)
 - `checks/urlscanChecks.js` (turns results into Signals)
-
-> The integration is designed as **best-effort**: API timeouts or pending results should not freeze the Gmail UI.
 
 ---
 
