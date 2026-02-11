@@ -206,6 +206,8 @@ The Add-on will automatically:
     }
   ]
 }
+```
+---
 
 ## ⚠️ Limitations & Constraints
 
