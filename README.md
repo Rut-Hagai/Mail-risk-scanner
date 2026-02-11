@@ -89,26 +89,40 @@ Relevant code:
 <summary>🗂️ <b>Click to view folder tree</b></summary>
 
 ```text
-mail-risk-scanner-backend/
-├── app.js                       # Express app: middleware + routes
-├── server.js                    # Entry point: dotenv + listen
-├── routes/
-│   └── scan.js                  # POST /scan route (normalization only)
-├── services/
-│   ├── scanService.js           # orchestrates checks + scoring + verdict
-│   ├── signalAggregator.js      # de-duplicates entity signals
-│   └── urlscanClient.js         # urlscan.io HTTP client
-├── checks/
-│   ├── senderChecks.js          # sender-related heuristics
-│   ├── contentChecks.js         # content keyword heuristics
-│   ├── linkChecks.js            # link heuristics (shorteners, IP URL, HTTP)
-│   ├── attachmentChecks.js      # attachments metadata heuristics
-│   └── urlscanChecks.js         # urlscan reputation signals
-└── package.json
-gmail-addon/
-├── Code.gs
-├── appsscript.json
-└── (optional) config.gs
+Mail-risk-scanner/
+│
+├── checks/                       # Heuristic & enrichment checks (pure logic modules)
+│   ├── attachmentChecks.js       # Attachment metadata heuristics (zip, risky extensions, etc.)
+│   ├── contentChecks.js          # Suspicious keyword & text pattern detection
+│   ├── linkChecks.js             # Link heuristics (shorteners, IP URLs, non-HTTPS)
+│   ├── senderChecks.js           # Sender-based checks (reply-to mismatch, anomalies)
+│   └── urlscanChecks.js          # Converts urlscan.io results into risk signals
+│
+├── gmail-addon/                  # Google Apps Script (Gmail Add-on frontend)
+│   ├── Code.gs                   # Entry point: buildAddOn, extraction, card rendering
+│   ├── appsscript.json           # Add-on manifest (scopes, triggers, metadata)
+│   └── backendClient.gs          # Thin HTTP client calling backend /scan endpoint
+│
+├── routes/                       # Express route layer (HTTP only)
+│   └── scan.js                   # POST /scan endpoint (request normalization)
+│
+├── services/                     # Core business logic
+│   ├── scanService.js            # Orchestrates checks → aggregation → score → verdict
+│   ├── signalAggregator.js       # Deduplicates entity signals (prevents score inflation)
+│   └── urlscanClient.js          # Axios-based client for urlscan.io API
+│
+├── utils/                        # Shared helper utilities
+│   ├── email.js                  # Email parsing & normalization helpers
+│   ├── filename.js               # Filename & extension parsing utilities
+│   ├── text.js                   # Text normalization helpers
+│   └── url.js                    # URL parsing & validation helpers
+│
+├── app.js                        # Express app configuration (middleware + routes)
+├── server.js                     # Application entry point (dotenv + app.listen)
+├── package.json                  # Dependencies & npm scripts
+├── package-lock.json             # Dependency lock file
+└── README.md                     # Project documentation
+
 </details>
 
 <a id="risk-scoring-logic"></a>
