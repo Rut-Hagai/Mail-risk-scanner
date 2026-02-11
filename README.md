@@ -8,20 +8,20 @@
 <details>
 <summary>🧭 Table of Contents (click to expand)</summary>
 
-* [📘 About the Project](#about-the-project)
-* [🏗️ Architecture](#architecture)
-* [🔧 Project Structure](#project-structure)
-* [✨ Features](#features)
-* [📡 APIs & Interfaces](#apis--interfaces)
-* [⚙️ Getting Started](#getting-started)
-    * [✔️ Prerequisites](#prerequisites)
-    * [📦 Installation & Setup (Backend)](#installation--setup-backend)
-    * [📧 Setup (Gmail Add-on)](#setup-gmail-add-on)
-* [▶️ Usage](#usage)
-* [🧩 Example Output](#example-output)
-* [⚠️ Limitations & Constraints](#limitations--constraints)
-* [🔮 Future Roadmap](#future-roadmap)
-* [👩‍💻 Author](#author)
+* [📘 About the Project](#-about-the-project)
+* [🏗️ Architecture](#-architecture)
+* [🔧 Project Structure](#-project-structure)
+* [✨ Features](#-features)
+* [📡 APIs & Interfaces](#-apis--interfaces)
+* [⚙️ Getting Started](#-getting-started)
+    * [✔️ Prerequisites](#-prerequisites)
+    * [📦 Installation & Setup (Backend)](#-installation--setup-backend)
+    * [📧 Setup (Gmail Add-on)](#-setup-gmail-add-on)
+* [▶️ Usage](#-usage)
+* [🧩 Example Output](#-example-output)
+* [⚠️ Limitations & Constraints](#-limitations--constraints)
+* [🔮 Future Roadmap](#-future-roadmap)
+* [👩‍💻 Author](#-author)
 
 </details>
 
