@@ -201,6 +201,7 @@ Mail-risk-scanner/
 ├── package.json                  # Dependencies & npm scripts
 ├── package-lock.json             # Dependency lock file
 └── README.md                     # Project documentation
+```
 
 </details>
 
