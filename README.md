@@ -53,6 +53,10 @@ This project was built as a technical assignment and intentionally uses a modula
 ## 🏗️ Architecture
 
 ```mermaid
+
+## 🏗️ Architecture
+
+```mermaid
 flowchart LR
   U[User in Gmail] -->|opens an email| A[Gmail Add-on (Apps Script)\nbuildAddOn(e)]
   A -->|extracts: from/replyTo/subject/body\n+ links + attachments metadata| P[Normalized Payload (JSON)]
@@ -77,28 +81,15 @@ flowchart LR
   A -->|renders CardService UI| U
 
 
-
----
-
-<a id="external-apis-used"></a>
-## 🔌 External APIs Used
-
-### urlscan.io
-The backend integrates with **urlscan.io** for URL reputation enrichment:
-- Submit URL for scanning
-- Poll for scan results (UUID)
-- Translate verdicts into risk signals
-
-Relevant code:
-- `services/urlscanClient.js` (HTTP client using axios)
-- `checks/urlscanChecks.js` (turns results into Signals)
-
 ---
 
 <a id="project-structure"></a>
+
 ## 🔧 Project Structure
+```
 
 <details>
+
 <summary>🗂️ <b>Click to view folder tree</b></summary>
 
 ```text
