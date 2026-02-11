@@ -52,8 +52,6 @@ This project was built as a technical assignment and intentionally uses a modula
 <a id="architecture"></a>
 ## 🏗️ Architecture
 
-## 🏗️ Architecture
-
 ```mermaid
 flowchart LR
   U[User in Gmail] -->|opens an email| A[Gmail Add-on (Apps Script)\nbuildAddOn(e)]
