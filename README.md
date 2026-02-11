@@ -35,7 +35,7 @@ It is a comprehensive security tool designed to analyze incoming emails in **Gma
 The system combines **static heuristic analysis** with **dynamic external intelligence** to generate a risk score and a clear verdict (`SAFE`, `SUSPICIOUS`, or `DANGEROUS`) for every opened email.
 
 ---
-
+## <a id="architecture"></a>🏗️ Architecture
 ## 🏗️ Architecture
 
 The solution relies on a **Client-Server** architecture to offload heavy processing from the limited Google Apps Script environment.
