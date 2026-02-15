@@ -9,15 +9,15 @@
  * - Render the result as a Gmail Add-on Card
  */
 function buildAddOn(e) {
-  var msgId = e.gmail && e.gmail.messageId;
+  const msgId = e.gmail && e.gmail.messageId;
   if (!msgId) {
     return buildErrorCard_("No messageId found in trigger event.");
   }
 
-  var gmailMessage = GmailApp.getMessageById(msgId);
+  const gmailMessage = GmailApp.getMessageById(msgId);
 
   // Extract email fields
-  var payload = {
+  const payload = {
     messageId: msgId,
     from: gmailMessage.getFrom() || "",
     replyTo: gmailMessage.getReplyTo() || "",
@@ -28,7 +28,7 @@ function buildAddOn(e) {
   };
 
   // Call backend
-  var result;
+  let result;
   try {
     result = callBackendScan_(payload);
   } catch (err) {
@@ -49,34 +49,34 @@ function buildAddOn(e) {
  *                 or the response is not valid JSON.
  */
 function callBackendScan_(payload) {
-  var baseUrl =
+  const baseUrl =
     PropertiesService.getScriptProperties().getProperty("BACKEND_BASE_URL");
 
   if (!baseUrl) {
     throw new Error("Missing Script Property BACKEND_BASE_URL");
   }
 
-  var url = baseUrl.replace(/\/$/, "") + "/scan";
+  const url = baseUrl.replace(/\/$/, "") + "/scan";
 
-  var options = {
+  const options = {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
 
-  var res = UrlFetchApp.fetch(url, options);
-  var text = res.getContentText();
-  var code = res.getResponseCode();
+  const res = UrlFetchApp.fetch(url, options);
+  const text = res.getContentText();
+  const code = res.getResponseCode();
 
   if (code < 200 || code >= 300) {
-    throw new Error("Backend error: HTTP " + code + " - " + text);
+    throw new Error(`Backend error: HTTP ${code} - ${text}`);
   }
 
   try {
     return JSON.parse(text);
   } catch (e) {
-    throw new Error("Backend returned non-JSON response: " + text);
+    throw new Error(`Backend returned non-JSON response: ${text}`);
   }
 }
 
@@ -88,31 +88,31 @@ function callBackendScan_(payload) {
  * @returns {Card} Gmail Card to render.
  */
 function buildResultCard_(result, payload) {
-  function verdictIcon_(v) {
+  const verdictIcon_ = (v) => {
     if (v === "DANGEROUS") return "🚨";
     if (v === "SUSPICIOUS") return "⚠️";
     return "✅";
-  }
+  };
 
-  function severityIcon_(s) {
+  const severityIcon_ = (s) => {
     if (s === "HIGH") return "🚨";
     if (s === "MEDIUM") return "⚠️";
     return "ℹ️";
-  }
+  };
 
-  var verdict = String((result && result.verdict) || "N/A");
-  var score = Number((result && result.score) || 0);
-  var summary = String((result && result.summary) || "No summary.");
+  const verdict = String((result && result.verdict) || "N/A");
+  const score = Number((result && result.score) || 0);
+  const summary = String((result && result.summary) || "No summary.");
 
-  var header = CardService.newCardHeader()
+  const header = CardService.newCardHeader()
     .setTitle("Mail Risk Scanner")
     .setSubtitle("Scan result");
 
-  var section = CardService.newCardSection();
+  const section = CardService.newCardSection();
 
   section.addWidget(CardService.newKeyValue()
     .setTopLabel("Verdict")
-    .setContent(verdictIcon_(verdict) + " " + verdict));
+    .setContent(`${verdictIcon_(verdict)} ${verdict}`));
 
   section.addWidget(CardService.newKeyValue()
     .setTopLabel("Score")
@@ -122,24 +122,22 @@ function buildResultCard_(result, payload) {
     .setText(sanitize_(summary)));
 
   // Signals (top 6)
-  var signals = (result && Array.isArray(result.signals)) ? result.signals : [];
+  let signals = (result && Array.isArray(result.signals)) ? result.signals : [];
 
   // Hide noisy internal statuses (optional)
-  signals = signals.filter(function (s) {
-    var id = String((s && s.id) || "");
+  signals = signals.filter(s => {
+    const id = String((s && s.id) || "");
     return id !== "URLSCAN_PENDING" && id !== "URLSCAN_ERROR";
   });
 
   if (signals.length) {
-    signals.sort(function (a, b) {
-      return (Number(b.weight) || 0) - (Number(a.weight) || 0);
-    });
+    signals.sort((a, b) => (Number(b.weight) || 0) - (Number(a.weight) || 0));
 
-    var lines = signals.slice(0, 6).map(function (s) {
-      var label = String(s.label || "Signal");
-      var weight = Number(s.weight) || 0;
-      var sev = String(s.severity || "LOW");
-      return "• " + severityIcon_(sev) + " " + sanitize_(label) + " (+" + weight + ")";
+    const lines = signals.slice(0, 6).map(function (s) {
+      const label = String(s.label || "Signal");
+      const weight = Number(s.weight) || 0;
+      const sev = String(s.severity || "LOW");
+      return `• ${severityIcon_(sev)} ${sanitize_(label)} (+${weight})`;
     }).join("<br/>");
 
     section.addWidget(CardService.newTextParagraph()
@@ -147,16 +145,16 @@ function buildResultCard_(result, payload) {
   }
 
   // Quick snapshot
-  var from = payload && payload.from ? String(payload.from) : "";
-  var subject = payload && payload.subject ? String(payload.subject) : "";
-  var linksCount = payload && Array.isArray(payload.links) ? payload.links.length : 0;
-  var attCount = payload && Array.isArray(payload.attachments) ? payload.attachments.length : 0;
+  const from = payload && payload.from ? String(payload.from) : "";
+  const subject = payload && payload.subject ? String(payload.subject) : "";
+  const linksCount = payload && Array.isArray(payload.links) ? payload.links.length : 0;
+  const attCount = payload && Array.isArray(payload.attachments) ? payload.attachments.length : 0;
 
   section.addWidget(CardService.newTextParagraph().setText(
-    "<b>From:</b> " + sanitize_(from) + "<br/>" +
-    "<b>Subject:</b> " + sanitize_(subject) + "<br/>" +
-    "<b>Links:</b> " + linksCount + "<br/>" +
-    "<b>Attachments:</b> " + attCount
+    `<b>From:</b> ${sanitize_(from)}<br/>` +
+    `<b>Subject:</b> ${sanitize_(subject)}<br/>` +
+    `<b>Links:</b> ${linksCount}<br/>` +
+    `<b>Attachments:</b> ${attCount}`
   ));
 
   return CardService.newCardBuilder()
@@ -191,11 +189,9 @@ function buildErrorCard_(msg) {
  */
 function extractLinks_(text) {
   if (!text) return [];
-  var regex = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
-  var matches = text.match(regex) || [];
-  return matches.map(function (u) {
-    return u.replace(/[),.;!?]+$/, "");
-  });
+  const regex = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
+  const matches = text.match(regex) || [];
+  return matches.map(u => u.replace(/[),.;!?]+$/, ""));
 }
 
 /**
@@ -206,8 +202,8 @@ function extractLinks_(text) {
  * @returns {Array<{filename:string, mimeType:string, sizeBytes:number}>}
  */
 function extractAttachmentsMeta_(gmailMessage) {
-  var atts = gmailMessage.getAttachments({ includeInlineImages: false }) || [];
-  return atts.map(function (a) {
+  const atts = gmailMessage.getAttachments({ includeInlineImages: false }) || [];
+  return atts.map(a => {
     return {
       filename: a.getName() || "unknown",
       mimeType: a.getContentType() || "application/octet-stream",
@@ -229,6 +225,7 @@ function sanitize_(s) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
 
 
 
