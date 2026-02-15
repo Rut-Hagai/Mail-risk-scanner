@@ -11,18 +11,37 @@
  * @returns {Object} Parsed JSON response from the backend scan endpoint.
  */
 function callBackendScan(payload) {
-  var baseUrl = "https://ida-nonjudicable-overfly.ngrok-free.dev";
-  var url = baseUrl + "/scan";
+  const baseUrl = PropertiesService.getScriptProperties().getProperty("BACKEND_BASE_URL");
 
-  var options = {
+  if (!baseUrl) {
+    throw new Error("Configuration Error: BACKEND_BASE_URL is not set in Script Properties.");
+  }
+
+  const url = `${baseUrl.replace(/\/$/, "")}/scan`;
+
+  const options = {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
 
-  var response = UrlFetchApp.fetch(url, options);
-  return JSON.parse(response.getContentText());
+//Perform the request
+  const response = UrlFetchApp.fetch(url, options);
+  const responseCode = response.getResponseCode();
+  const responseText = response.getContentText();
+
+  //Handle HTTP Errors (e.g., 404, 500)
+  if (responseCode < 200 || responseCode >= 300) {
+    console.error(`Backend Error (${responseCode}): ${responseText}`);
+    throw new Error(`Scan failed with status ${responseCode}. Please try again later.`);
+  }
+
+  //Safe Parse
+  try {
+    return JSON.parse(responseText);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", responseText);
+    throw new Error("Invalid response format from server.");
+  }
 }
-
-
