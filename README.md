@@ -2,7 +2,7 @@
 
 **Upwind Student Program - Home Task**
 
- ---
+ 
 ### 📊 [Project Presentation](https://www.canva.com/design/DAHBJOADNZk/_R8mBvxP6ny0d3l_8YiMxA/edit?utm_content=DAHBJOADNZk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 ---
 🧭 Table of Contents
